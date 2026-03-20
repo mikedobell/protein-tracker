@@ -201,3 +201,127 @@ describe('#10 — Enter key support', () => {
         assert.ok(hasKeyHandler || hasForm, 'must handle Enter key via keydown listener or <form> element');
     });
 });
+
+// ── #11: Pumpkin Seeds in food database ─────────────────────────
+describe('#11 — Pumpkin Seeds', () => {
+    test('proteinDB contains Pumpkin Seeds', () => {
+        const found = app.proteinDB.find(f => /pumpkin seeds/i.test(f.name));
+        assert.ok(found, 'proteinDB must include Pumpkin Seeds');
+    });
+
+    test('Pumpkin Seeds has a reasonable ratio', () => {
+        const found = app.proteinDB.find(f => /pumpkin seeds/i.test(f.name));
+        assert.ok(found.ratio >= 0.2 && found.ratio <= 0.4, `ratio ${found.ratio} should be between 0.2 and 0.4`);
+    });
+});
+
+// ── #12: Food names include ratio in display ────────────────────
+describe('#12 — Display ratio in food names', () => {
+    test('getDisplayName function exists and appends ratio', () => {
+        assert.strictEqual(typeof app.getDisplayName, 'function');
+        const item = { name: 'Chicken Breast (cooked)', ratio: 0.31 };
+        const display = app.getDisplayName(item);
+        assert.ok(display.includes('(0.31)'), `display name "${display}" must include "(0.31)"`);
+    });
+
+    test('index.html uses getDisplayName or appends ratio when populating select', () => {
+        const html = readHTML();
+        assert.ok(
+            html.includes('getDisplayName') || html.includes('item.ratio') || html.includes('.ratio'),
+            'must use ratio when populating the food select dropdown'
+        );
+    });
+});
+
+// ── #14: Missed day detection and backfill ──────────────────────
+describe('#14 — Missed days', () => {
+    test('getMissedDays function exists', () => {
+        assert.strictEqual(typeof app.getMissedDays, 'function');
+    });
+
+    test('getMissedDays returns empty array when no logs exist', () => {
+        const missed = app.getMissedDays([], 7);
+        assert.deepStrictEqual(missed, [], 'no logs means no missed days');
+    });
+
+    test('getMissedDays returns empty when all recent days have data', () => {
+        const testLogs = [];
+        for (let i = 0; i < 3; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            testLogs.push({ date: d.toDateString(), protein: 100 });
+        }
+        const missed = app.getMissedDays(testLogs, 7);
+        assert.deepStrictEqual(missed, [], 'consecutive days with data means no missed days');
+    });
+
+    test('getMissedDays detects a gap between logged days', () => {
+        const today = new Date();
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(today.getDate() - 2);
+        const testLogs = [
+            { date: today.toDateString(), protein: 100 },
+            { date: twoDaysAgo.toDateString(), protein: 150 },
+        ];
+        // Yesterday has no data but is between two logged days
+        const missed = app.getMissedDays(testLogs, 7);
+        const yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+        assert.ok(missed.length >= 1, 'should detect at least one missed day');
+        assert.ok(
+            missed.some(d => d.dateStr === yesterday.toDateString()),
+            'yesterday should be flagged as missed'
+        );
+    });
+
+    test('getMissedDays does not flag days before first-ever log', () => {
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        const today = new Date();
+        const testLogs = [
+            { date: threeDaysAgo.toDateString(), protein: 100 },
+            { date: today.toDateString(), protein: 100 },
+        ];
+        const missed = app.getMissedDays(testLogs, 7);
+        // Should only flag days BETWEEN threeDaysAgo and today, not before threeDaysAgo
+        const fourDaysAgo = new Date();
+        fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+        assert.ok(
+            !missed.some(d => d.dateStr === fourDaysAgo.toDateString()),
+            'days before first log should not be flagged'
+        );
+    });
+
+    test('createBackfillEntry function exists and creates a valid entry', () => {
+        assert.strictEqual(typeof app.createBackfillEntry, 'function');
+        const dateStr = new Date(Date.now() - 86400000).toDateString();
+        const entry = app.createBackfillEntry(dateStr, 120);
+        assert.strictEqual(entry.date, dateStr);
+        assert.strictEqual(entry.protein, 120);
+        assert.strictEqual(entry.name, 'Backfill Estimate');
+        assert.ok(entry.id, 'must have an id');
+        assert.ok(entry.backfill === true, 'must be flagged as backfill');
+    });
+
+    test('index.html has missed-day UI elements', () => {
+        const html = readHTML();
+        assert.ok(
+            html.includes('missed') || html.includes('Missed') || html.includes('backfill') || html.includes('getMissedDays'),
+            'must reference missed days or backfill in the UI'
+        );
+    });
+});
+
+// ── #13: Version number in footer ───────────────────────────────
+describe('#13 — Version number in footer', () => {
+    test('index.html has a footer element', () => {
+        const html = readHTML();
+        assert.ok(html.includes('<footer') || html.includes('id="footer"'),
+            'must have a footer element');
+    });
+
+    test('footer contains a version number', () => {
+        const html = readHTML();
+        assert.ok(/v\d+\.\d+/i.test(html), 'must contain a version number like v1.0 or v2.0');
+    });
+});

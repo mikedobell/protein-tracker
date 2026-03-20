@@ -28,7 +28,8 @@ const proteinDB = [
     { name: "Hemp Seeds", ratio: 0.32 },
     { name: "Oats (Dry)", ratio: 0.13 },
     { name: "Cheddar Cheese", ratio: 0.25 },
-    { name: "Beef Jerky", ratio: 0.33 }
+    { name: "Beef Jerky", ratio: 0.33 },
+    { name: "Pumpkin Seeds", ratio: 0.30 }
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 let logs = JSON.parse(localStorage.getItem('protein_logs')) || [];
@@ -110,11 +111,49 @@ function saveLogs() {
     localStorage.setItem('protein_logs', JSON.stringify(logs));
 }
 
+function getMissedDays(logs, numDays) {
+    if (logs.length === 0) return [];
+    // Find the earliest log date
+    const allDates = logs.map(l => new Date(l.date).getTime());
+    const earliest = Math.min(...allDates);
+    const missed = [];
+    for (let i = 0; i < numDays; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+        const ds = d.toDateString();
+        // Skip days before the first-ever log
+        if (d.getTime() < earliest) continue;
+        const total = logs.filter(l => l.date === ds).reduce((sum, l) => sum + l.protein, 0);
+        if (total === 0) {
+            missed.push({ dateStr: ds, date: d });
+        }
+    }
+    return missed;
+}
+
+function createBackfillEntry(dateStr, protein) {
+    return {
+        id: Date.now() + Math.random(),
+        name: 'Backfill Estimate',
+        weight: protein,
+        protein: protein,
+        date: dateStr,
+        timestamp: new Date(dateStr).getTime(),
+        backfill: true
+    };
+}
+
+function getDisplayName(item) {
+    return `${item.name} (${item.ratio.toFixed(2)})`;
+}
+
 // Make functions available for Node.js tests
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         GOAL_MIN, GOAL_MAX, proteinDB,
         calcProtein, calcAverage, getLast7Days,
-        getGoals, saveGoals, exportData, importData, escapeHTML
+        getGoals, saveGoals, exportData, importData, escapeHTML,
+        getDisplayName, getMissedDays, createBackfillEntry
     };
 }

@@ -173,6 +173,10 @@
         </div>
     </div>
 
+    <footer class="max-w-4xl mx-auto mt-8 pb-4 text-center text-[10px] text-slate-400 font-medium">
+        Protein Tracker v1.1
+    </footer>
+
     <script src="app.js"></script>
     <script>
         window.onload = () => {
@@ -180,7 +184,7 @@
             proteinDB.forEach((item, index) => {
                 const opt = document.createElement('option');
                 opt.value = index;
-                opt.textContent = item.name;
+                opt.textContent = getDisplayName(item);
                 select.appendChild(opt);
             });
 
@@ -276,6 +280,17 @@
             event.target.value = '';
         }
 
+        function promptBackfill(dateStr) {
+            const val = prompt(`Enter estimated total protein (g) for ${dateStr}:`);
+            if (!val) return;
+            const protein = parseInt(val, 10);
+            if (!protein || protein <= 0) return;
+            const entry = createBackfillEntry(dateStr, protein);
+            logs.push(entry);
+            saveLogs();
+            updateUI();
+        }
+
         function updateUI() {
             const goals = getGoals();
             const goalMin = goals.min;
@@ -360,25 +375,42 @@
                 avgStatus.className = "mt-4 flex items-center gap-2 text-[10px] font-bold text-orange-400 uppercase tracking-wider";
             }
 
-            // Update History List
+            // Update History List (with missed day detection)
+            const missedDays = getMissedDays(logs, 7);
+            const missedSet = new Set(missedDays.map(m => m.dateStr));
             const historyContainer = document.getElementById('history-list');
             historyContainer.innerHTML = '';
             last7Days.forEach(day => {
-                const dayColor = day.total === 0 ? 'bg-slate-100' : (day.total < goalMin ? 'bg-orange-400' : (day.total <= goalMax ? 'bg-emerald-400' : 'bg-blue-400'));
+                const ds = day.date.toDateString();
+                const isMissed = missedSet.has(ds);
+                const dayColor = isMissed ? 'bg-red-400' : (day.total === 0 ? 'bg-slate-100' : (day.total < goalMin ? 'bg-orange-400' : (day.total <= goalMax ? 'bg-emerald-400' : 'bg-blue-400')));
+                const dayLabel = day.isToday ? 'Today' : day.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
                 const div = document.createElement('div');
                 div.className = "flex items-center justify-between p-2 rounded-2xl hover:bg-slate-50 transition-colors";
-                div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-1.5 h-7 rounded-full ${dayColor}"></div>
-                        <div>
-                            <p class="text-[10px] font-black text-slate-800 uppercase">
-                                ${day.isToday ? 'Today' : day.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                            </p>
-                            <p class="text-[10px] text-slate-400 font-bold">${day.total}g Total</p>
+
+                if (isMissed) {
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-1.5 h-7 rounded-full ${dayColor}"></div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-800 uppercase">${escapeHTML(dayLabel)}</p>
+                                <p class="text-[10px] text-red-400 font-bold">Missed</p>
+                            </div>
                         </div>
-                    </div>
-                    ${day.total >= goalMin && day.total <= goalMax ? '<div class="text-emerald-400"><svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg></div>' : ''}
-                `;
+                        <button onclick="promptBackfill('${escapeHTML(ds)}')" class="text-[10px] font-bold text-red-400 hover:text-red-600 uppercase tracking-tighter">+ Add Estimate</button>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-1.5 h-7 rounded-full ${dayColor}"></div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-800 uppercase">${escapeHTML(dayLabel)}</p>
+                                <p class="text-[10px] text-slate-400 font-bold">${day.total}g Total</p>
+                            </div>
+                        </div>
+                        ${day.total >= goalMin && day.total <= goalMax ? '<div class="text-emerald-400"><svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg></div>' : ''}
+                    `;
+                }
                 historyContainer.appendChild(div);
             });
         }
