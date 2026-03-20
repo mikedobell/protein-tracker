@@ -375,26 +375,24 @@
                 avgStatus.className = "mt-4 flex items-center gap-2 text-[10px] font-bold text-orange-400 uppercase tracking-wider";
             }
 
-            // Update History List (with missed day detection)
-            const missedDays = getMissedDays(logs, 7);
-            const missedSet = new Set(missedDays.map(m => m.dateStr));
+            // Update History List — any past day with 0g shows backfill option
             const historyContainer = document.getElementById('history-list');
             historyContainer.innerHTML = '';
             last7Days.forEach(day => {
                 const ds = day.date.toDateString();
-                const isMissed = missedSet.has(ds);
-                const dayColor = isMissed ? 'bg-red-400' : (day.total === 0 ? 'bg-slate-100' : (day.total < goalMin ? 'bg-orange-400' : (day.total <= goalMax ? 'bg-emerald-400' : 'bg-blue-400')));
+                const canBackfill = day.total === 0 && !day.isToday;
+                const dayColor = canBackfill ? 'bg-red-400' : (day.total === 0 ? 'bg-slate-100' : (day.total < goalMin ? 'bg-orange-400' : (day.total <= goalMax ? 'bg-emerald-400' : 'bg-blue-400')));
                 const dayLabel = day.isToday ? 'Today' : day.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
                 const div = document.createElement('div');
                 div.className = "flex items-center justify-between p-2 rounded-2xl hover:bg-slate-50 transition-colors";
 
-                if (isMissed) {
+                if (canBackfill) {
                     div.innerHTML = `
                         <div class="flex items-center gap-3">
                             <div class="w-1.5 h-7 rounded-full ${dayColor}"></div>
                             <div>
                                 <p class="text-[10px] font-black text-slate-800 uppercase">${escapeHTML(dayLabel)}</p>
-                                <p class="text-[10px] text-red-400 font-bold">Missed</p>
+                                <p class="text-[10px] text-red-400 font-bold">No Data</p>
                             </div>
                         </div>
                         <button onclick="promptBackfill('${escapeHTML(ds)}')" class="text-[10px] font-bold text-red-400 hover:text-red-600 uppercase tracking-tighter">+ Add Estimate</button>
