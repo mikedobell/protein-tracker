@@ -310,6 +310,16 @@ describe('#14 — Missed days', () => {
             'must reference missed days or backfill in the UI'
         );
     });
+
+    test('backfill button shows on ANY past day with 0g, not just between first log and today', () => {
+        const html = readHTML();
+        // The history rendering should show the estimate button based on
+        // day.total === 0 && !day.isToday, not solely on isMissed/missedSet.
+        // The old pattern was: if (isMissed) { ...promptBackfill... } else { ...no button... }
+        // The new pattern should use: day.total === 0 && !day.isToday as the condition
+        assert.ok(!html.includes('if (isMissed)'),
+            'should not gate backfill on isMissed — any past day with 0g should allow estimates');
+    });
 });
 
 // ── #13: Version number in footer ───────────────────────────────
