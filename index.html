@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protein Tracker Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .progress-transition { transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto space-y-6">
+
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Protein Intake</h1>
+                <p id="goal-subtitle" class="text-slate-500 text-sm font-medium">Daily Target: 160g - 200g</p>
+            </div>
+            <div id="current-date-display" class="text-sm font-bold text-slate-400 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
+                <!-- Date goes here -->
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Column 1 & 2: Main Controls -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Today's Stats Card -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <div class="p-2 bg-blue-50 rounded-xl text-blue-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                            </div>
+                            <h2 class="font-bold text-slate-800">Today's Progress</h2>
+                        </div>
+                        <span id="today-total" class="text-4xl font-black text-slate-900">0<span class="text-lg font-normal text-slate-400 ml-1">g</span></span>
+                    </div>
+
+                    <div class="relative h-5 w-full bg-slate-100 rounded-full overflow-hidden mb-3">
+                        <div id="progress-bar" class="progress-transition h-full bg-orange-500" style="width: 0%"></div>
+                        <div id="goal-marker" class="absolute top-0 h-full w-0.5 bg-slate-900 opacity-40" style="left: 80%"></div>
+                    </div>
+
+                    <div id="bar-labels" class="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                        <span>0g</span>
+                        <span>160g Goal</span>
+                        <span>200g Max</span>
+                    </div>
+
+                    <div id="status-badge" class="mt-4 px-4 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-2 bg-slate-100 text-slate-500">
+                        Start Logging
+                    </div>
+                </div>
+
+                <!-- Input Form -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Log Meal
+                    </h3>
+                    <form onsubmit="addEntry(); return false;">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Protein Source</label>
+                                <select id="food-select" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Weight (Grams)</label>
+                                <input type="number" id="weight-input" placeholder="e.g. 150" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full mt-4 bg-slate-900 hover:bg-black text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg active:scale-[0.98]">
+                            Add to Log
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Today's Detailed Log -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            <h3 class="font-bold text-slate-800 text-sm">Today's Details</h3>
+                        </div>
+                        <button onclick="clearToday()" class="text-[10px] font-bold text-red-400 hover:text-red-600 uppercase tracking-tighter">Clear Today</button>
+                    </div>
+                    <div id="log-list" class="divide-y divide-slate-50 max-h-64 overflow-y-auto">
+                        <!-- Entries go here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 3: Sidebar Stats -->
+            <div class="space-y-6">
+
+                <!-- 7-Day Average -->
+                <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2 mb-2 opacity-60">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                            <span class="text-[10px] font-bold uppercase tracking-widest">7-Day Running Avg</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span id="avg-display" class="text-4xl font-black">0</span>
+                            <span class="text-slate-400 text-sm font-bold">g / day</span>
+                        </div>
+                        <div id="avg-status" class="mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            No data yet
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl"></div>
+                </div>
+
+                <!-- History -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center justify-between">
+                        <span class="text-sm">Recent History</span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Last 7 Days</span>
+                    </h3>
+                    <div id="history-list" class="space-y-3">
+                        <!-- History goes here -->
+                    </div>
+                </div>
+
+                <!-- Goal Settings -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-4 text-sm">Goal Settings</h3>
+                    <div class="space-y-3">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Min Goal (g)</label>
+                            <input type="number" id="goal-min" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value="160">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Max Goal (g)</label>
+                            <input type="number" id="goal-max" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value="200">
+                        </div>
+                        <button onclick="updateGoals()" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-2.5 rounded-2xl text-xs transition-all">
+                            Save Goals
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Export / Import -->
+                <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="flex gap-2">
+                        <button onclick="doExport()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition-all">
+                            Export Data
+                        </button>
+                        <label class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition-all text-center cursor-pointer">
+                            Import Data
+                            <input type="file" accept=".json" onchange="doImport(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Storage Info -->
+                <div class="p-4 bg-slate-100 rounded-2xl border border-dashed border-slate-300">
+                    <p class="text-[10px] text-slate-500 leading-tight font-medium">
+                        <strong>Privacy:</strong> Data is stored in your browser's local storage. Clearing site data will delete your logs.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        window.onload = () => {
+            const select = document.getElementById('food-select');
+            proteinDB.forEach((item, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.textContent = item.name;
+                select.appendChild(opt);
+            });
+
+            document.getElementById('current-date-display').textContent = new Date().toLocaleDateString(undefined, {
+                weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+            });
+
+            const goals = getGoals();
+            document.getElementById('goal-min').value = goals.min;
+            document.getElementById('goal-max').value = goals.max;
+
+            updateUI();
+        };
+
+        function addEntry() {
+            const select = document.getElementById('food-select');
+            const weightInput = document.getElementById('weight-input');
+            const weight = parseFloat(weightInput.value);
+
+            if (!weight || weight <= 0) return;
+
+            const food = proteinDB[select.value];
+            const proteinGrams = calcProtein(weight, food.ratio);
+
+            const newEntry = {
+                id: Date.now(),
+                name: food.name,
+                weight: weight,
+                protein: proteinGrams,
+                date: new Date().toDateString(),
+                timestamp: new Date().getTime()
+            };
+
+            logs.push(newEntry);
+            saveLogs();
+            weightInput.value = '';
+            updateUI();
+        }
+
+        function deleteEntry(id) {
+            logs = logs.filter(l => l.id !== id);
+            saveLogs();
+            updateUI();
+        }
+
+        function clearToday() {
+            if (confirm("Delete all entries for today?")) {
+                const today = new Date().toDateString();
+                logs = logs.filter(l => l.date !== today);
+                saveLogs();
+                updateUI();
+            }
+        }
+
+        function updateGoals() {
+            const min = parseInt(document.getElementById('goal-min').value, 10);
+            const max = parseInt(document.getElementById('goal-max').value, 10);
+            if (!min || !max || min <= 0 || max <= 0 || min >= max) return;
+            saveGoals(min, max);
+            updateUI();
+        }
+
+        function doExport() {
+            const blob = new Blob([exportData()], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'protein-tracker-backup.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function doImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = importData(e.target.result);
+                    logs = data.logs;
+                    saveLogs();
+                    if (data.goals) {
+                        saveGoals(data.goals.min, data.goals.max);
+                        document.getElementById('goal-min').value = data.goals.min;
+                        document.getElementById('goal-max').value = data.goals.max;
+                    }
+                    updateUI();
+                } catch (err) {
+                    alert('Invalid backup file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function updateUI() {
+            const goals = getGoals();
+            const goalMin = goals.min;
+            const goalMax = goals.max;
+
+            const todayStr = new Date().toDateString();
+            const todayEntries = logs.filter(l => l.date === todayStr).sort((a, b) => b.timestamp - a.timestamp);
+            const todayTotal = todayEntries.reduce((sum, l) => sum + l.protein, 0);
+
+            // Update subtitle
+            document.getElementById('goal-subtitle').textContent = `Daily Target: ${goalMin}g - ${goalMax}g`;
+
+            // Update Header & Bar
+            document.getElementById('today-total').innerHTML = `${todayTotal}<span class="text-lg font-normal text-slate-400 ml-1">g</span>`;
+            const bar = document.getElementById('progress-bar');
+            const perc = Math.min((todayTotal / goalMax) * 100, 100);
+            bar.style.width = perc + '%';
+
+            // Update goal marker position
+            const markerPerc = (goalMin / goalMax) * 100;
+            document.getElementById('goal-marker').style.left = markerPerc + '%';
+
+            // Update bar labels
+            document.getElementById('bar-labels').innerHTML = `<span>0g</span><span>${goalMin}g Goal</span><span>${goalMax}g Max</span>`;
+
+            const badge = document.getElementById('status-badge');
+            if (todayTotal === 0) {
+                bar.className = "progress-transition h-full bg-slate-300";
+                badge.textContent = "No data logged";
+                badge.className = "mt-4 px-4 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-2 bg-slate-100 text-slate-500";
+            } else if (todayTotal < goalMin) {
+                bar.className = "progress-transition h-full bg-orange-500";
+                badge.textContent = `Under Goal (${goalMin - todayTotal}g to go)`;
+                badge.className = "mt-4 px-4 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-2 bg-orange-50 text-orange-600";
+            } else if (todayTotal <= goalMax) {
+                bar.className = "progress-transition h-full bg-emerald-500";
+                badge.textContent = "Perfect! Goal Met";
+                badge.className = "mt-4 px-4 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-2 bg-emerald-50 text-emerald-600";
+            } else {
+                bar.className = "progress-transition h-full bg-blue-500";
+                badge.textContent = "Over Target Range";
+                badge.className = "mt-4 px-4 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-2 bg-blue-50 text-blue-600";
+            }
+
+            // Update Log List
+            const logContainer = document.getElementById('log-list');
+            logContainer.innerHTML = todayEntries.length === 0 ?
+                '<p class="p-8 text-center text-slate-400 text-xs italic">Nothing logged today yet.</p>' : '';
+
+            todayEntries.forEach(entry => {
+                const div = document.createElement('div');
+                div.className = "p-4 flex justify-between items-center bg-white hover:bg-slate-50 transition-colors";
+                div.innerHTML = `
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">${escapeHTML(entry.name)}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">${escapeHTML(String(entry.weight))}g weight</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-sm font-black text-slate-700">${escapeHTML(String(entry.protein))}g</span>
+                        <button onclick="deleteEntry(${entry.id})" class="p-1 text-slate-200 hover:text-red-400 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                `;
+                logContainer.appendChild(div);
+            });
+
+            // Calculate History & Average (only days with data)
+            const last7Days = getLast7Days(logs);
+            const avg = calcAverage(logs, 7);
+
+            document.getElementById('avg-display').textContent = avg;
+            const avgStatus = document.getElementById('avg-status');
+            if (avg === 0) {
+                avgStatus.textContent = "No data yet";
+                avgStatus.className = "mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider";
+            } else if (avg >= goalMin) {
+                avgStatus.textContent = "Weekly Goal On Track";
+                avgStatus.className = "mt-4 flex items-center gap-2 text-[10px] font-bold text-emerald-400 uppercase tracking-wider";
+            } else {
+                avgStatus.textContent = "Below Weekly Target";
+                avgStatus.className = "mt-4 flex items-center gap-2 text-[10px] font-bold text-orange-400 uppercase tracking-wider";
+            }
+
+            // Update History List
+            const historyContainer = document.getElementById('history-list');
+            historyContainer.innerHTML = '';
+            last7Days.forEach(day => {
+                const dayColor = day.total === 0 ? 'bg-slate-100' : (day.total < goalMin ? 'bg-orange-400' : (day.total <= goalMax ? 'bg-emerald-400' : 'bg-blue-400'));
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between p-2 rounded-2xl hover:bg-slate-50 transition-colors";
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-1.5 h-7 rounded-full ${dayColor}"></div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-800 uppercase">
+                                ${day.isToday ? 'Today' : day.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                            </p>
+                            <p class="text-[10px] text-slate-400 font-bold">${day.total}g Total</p>
+                        </div>
+                    </div>
+                    ${day.total >= goalMin && day.total <= goalMax ? '<div class="text-emerald-400"><svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg></div>' : ''}
+                `;
+                historyContainer.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>

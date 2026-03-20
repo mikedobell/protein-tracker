@@ -1,0 +1,16 @@
+{
+  "name": "protein-tracker",
+  "version": "1.0.0",
+  "description": "KISS protein intake tracker",
+  "main": "app.js",
+  "scripts": {
+    "test": "node --test test.js",
+    "build:css": "npx tailwindcss -i input.css -o styles.css --content ./index.html --minify"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}
